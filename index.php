@@ -1,17 +1,12 @@
 <?php
 $mc = new Memcache();
 $mc -> connect('localhost', 11211);
-
 echo '循环计数器：' . $mc -> get('ddnsLog') . '<br>';
 $mc -> close();
+echo "<br><a href = 'mongoinit.php'>初始化数据库</a><br>";
 $mlink = new Mongo();
 $mlog = $mlink -> ddns -> log;
 echo 'Log总数：' . $mlog -> count() . '<br>';
-//$mlog -> drop();
-//$mlog -> insert(array('updatetime' => new MongoDate(time() - 7 * 24 * 60 * 60 - 60), 'ip' => '192.168.1.1'));
-//$mlog -> deleteIndex('ttl');
-//$mlog -> ensureIndex('updatetime', array('expireAfterSeconds' => 7 * 24 * 60 * 60, 'name' => 'ttl'));
-//$mlog -> remove(array('_id' => new MongoId('需要移除的key')));
 $cursor = $mlog -> find();
 while ($cursor -> hasNext()) {
 	$log = $cursor -> current();
@@ -25,4 +20,5 @@ while ($cursor -> hasNext()) {
 	$cursor -> next();
 }
 $mlink -> close();
+
 ?>
