@@ -12,7 +12,7 @@ if ($argc >= 1) {
 	//接受GET参数
 	$username = $_GET['username'];
 	$password = $_GET['password'];
-}else{
+} else {
 	exit();
 }
 if (empty($password) || empty($username)) {
@@ -22,9 +22,8 @@ if (empty($password) || empty($username)) {
 }
 $mc = new Memcache();
 $mc -> connect('localhost', 11211);
+$log = null;
 
-$mlink = new Mongo();
-$mongolog = $mlink -> ddns -> log;
 $c = curl_init();
 //操作curl获取当前ip
 curl_setopt_array($c, array(CURLOPT_RETURNTRANSFER => 1, CURLOPT_URL => 'http://teatreek.sinaapp.com/dnspod/getip.php'));
@@ -34,7 +33,8 @@ if ($newIp != $mc -> get('ddnsIp')) {
 	$ddnsinfo = $o -> recordInfo(1836472, 17037860);
 	if ($newIp != $ddnsinfo['record']['value']) {
 		$o -> recordDdns(1836472, 17037860, 'ddns');
-		$mongolog -> insert(array('updatetime' => new MongoDate(), 'ip' => $newIp));
+		$log = array('updatetime' => new MongoDate(), 'ip' => $newIp);
+
 	}
 	$mc -> set('ddnsIp', $newIp);
 	$mc -> set('ddnsTime', time());
@@ -44,7 +44,7 @@ if ($newIp != $mc -> get('ddnsIp')) {
 		$ddnsinfo = $o -> recordInfo(1836472, 17037860);
 		if ($newIp != $ddnsinfo['record']['value']) {
 			$o -> recordDdns(1836472, 17037860, 'ddns');
-			$mongolog -> insert(array('updatetime' => new MongoDate(), 'ip' => $newIp));
+			$log = array('updatetime' => new MongoDate(), 'ip' => $newIp);
 		}
 	}
 	$mc -> set('ddnsTime', $time);
@@ -58,5 +58,14 @@ if ($mc -> get('ddnsLog') > 1440) {
 }
 curl_close($c);
 $mc -> close();
-$mlink -> close();
+if ($log) {
+	try {
+		$mlink = new Mongo();
+		$mongolog = $mlink -> ddns -> log;
+		$mongolog -> insert($log);
+		$mlink -> close();
+	} catch(exception $e) {
+		// gotcha
+	}
+}
 ?>
